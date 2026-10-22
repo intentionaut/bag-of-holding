@@ -1,4 +1,4 @@
-![Bag of Holding: praise and reminders of your work, for a rainy day](docs/banner.png)
+![Bag of Holding: +1 to morale on a rainy day](docs/banner.png)
 
 # Bag of Holding
 
