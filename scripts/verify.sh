@@ -16,7 +16,8 @@ expected="com.apple.security.app-sandbox com.apple.security.files.user-selected.
 
 # 1. No network. The sandbox blocks network access unless an entitlement grants it.
 net=$(printf '%s' "$keys" | grep -i network)
-api=$(found 'URLSession|NWConnection|import Network|CFNetwork|CFSocket|https?://')
+# The tip link is allowed: it opens in your browser, not in the app.
+api=$(found 'URLSession|NWConnection|import Network|CFNetwork|CFSocket|https?://' | grep -v '"https://ko-fi.com/intentionaut"' || true)
 check "No network: no network entitlement" "$([ -z "$net" ] && echo ok || echo "$net")"
 check "No network: no networking code in Sources" "$([ -z "$api" ] && echo ok || echo "$api")"
 

@@ -55,7 +55,7 @@ scripts/verify.sh
 
 ## Support
 
-If the bag helps, you can buy me a coffee on [Ko-fi](https://ko-fi.com/intentionaut).
+If the bag helps, you can buy me a coffee on [Ko-fi](https://ko-fi.com/intentionaut). **Tip ☕** in the app opens the same page in your browser; the app itself still has no network access.
 
 ## Licence
 

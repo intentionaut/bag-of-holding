@@ -47,6 +47,8 @@ struct BagView: View {
                 Button("Add…", action: choose)
                 Button("Paste text") { pasting.toggle() }
                 Spacer()
+                Button("Tip ☕") { NSWorkspace.shared.open(Self.tipJar) }
+                    .help("Opens Ko-fi in your browser. The app itself never connects.")
                 Button("Show bag") { NSWorkspace.shared.activateFileViewerSelecting([bag.folder]) }
                 Button("Quit") { NSApp.terminate(nil) }
             }
@@ -72,6 +74,9 @@ struct BagView: View {
         .onChange(of: reminderOn) { reschedule() }
         .onChange(of: reminderMinutes) { reschedule() }
     }
+
+    /// The one link in the app. macOS hands it to your browser; the app has no network access.
+    static let tipJar = URL(string: "https://ko-fi.com/intentionaut")!
 
     // MARK: Contents
 
