@@ -48,10 +48,13 @@ struct BagView: View {
 
             Rectangle().fill(Theme.border.opacity(0.4)).frame(height: 2)
             HStack {
-                Button("Drop files…") { DropTile.shared.show(bag: bag) }
-                    .help("A small window you can drag files onto")
-                Button("Add…", action: choose)
-                Button("Paste text") { pasting.toggle() }
+                Menu("Add") {
+                    Button("Choose files…", action: choose)
+                    Button("Drop bar (drag from Finder)") { DropTile.shared.show(bag: bag) }
+                    Button("Paste text") { pasting.toggle() }
+                }
+                .menuStyle(.borderlessButton).menuIndicator(.hidden).fixedSize()
+                .font(Theme.mono(12, .bold)).foregroundStyle(Theme.text)
                 Spacer()
                 Button("Tip ☕") { NSWorkspace.shared.open(Self.tipJar) }
                     .help("Opens Ko-fi in your browser. The app itself never connects.")
