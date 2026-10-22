@@ -53,6 +53,10 @@ scripts/verify.sh
 `~/Library/Containers/local.bag-of-holding/Data/Library/Application Support/Bag`;
 **Show bag** opens it in Finder. `samples/` holds made-up files to try it with.
 
+## Support
+
+If the bag helps, you can buy me a coffee on [Ko-fi](https://ko-fi.com/intentionaut).
+
 ## Licence
 
 MIT © 2026 Saielle DaSilva. See `LICENSE`.
