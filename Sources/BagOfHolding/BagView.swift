@@ -18,6 +18,7 @@ struct BagView: View {
     @AppStorage("tab") private var tab = "bag"
     @AppStorage(Theme.key) private var theme = Theme.palettes[0].name
     @AppStorage(Theme.customKey) private var customColours = ""
+    @AppStorage("stars") private var stars = true
     @AppStorage("reminderOn") private var reminderOn = false
     @AppStorage("reminderMinutes") private var reminderMinutes = 9 * 60
 
@@ -45,7 +46,7 @@ struct BagView: View {
         .padding(14)
         .padding(.top, 14)   // room for the window's close button
         .frame(width: 520)
-        .background(StarField().id(look))
+        .background(StarField().id(look + "\(stars)"))
         .environment(\.colorScheme, Theme.scheme)
         .onAppear {
             bag.refresh()   // pick up anything the `bag` command added while the window was shut

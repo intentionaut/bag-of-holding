@@ -147,6 +147,7 @@ struct PixelButtonStyle: ButtonStyle {
 struct StarField: View {
     var body: some View {
         Canvas { context, size in
+            guard UserDefaults.standard.object(forKey: "stars") as? Bool ?? true else { return }
             var seed: UInt64 = 7
             for _ in 0..<40 {
                 seed = seed &* 6364136223846793005 &+ 1442695040888963407
@@ -216,6 +217,7 @@ struct PixelText: View {
 struct ThemePicker: View {
     @AppStorage(Theme.key) private var theme = Theme.palettes[0].name
     @AppStorage(Theme.customKey) private var stored = ""
+    @AppStorage("stars") private var stars = true
 
     var body: some View {
         VStack(alignment: .leading, spacing: 10) {
@@ -235,6 +237,7 @@ struct ThemePicker: View {
                 Text(theme == Theme.custom ? "In use" : "Change a colour to make your own")
                     .font(Theme.mono(10)).foregroundStyle(Theme.dim)
             }
+            Toggle("Stars", isOn: $stars)
         }
     }
 
