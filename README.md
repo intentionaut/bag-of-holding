@@ -1,16 +1,28 @@
-![Bag of Holding: +1 to morale on a rainy day](docs/banner.png)
+```text
+          ██████████
+        ██████████████
+            ▒▒▒▒▒▒
+          ██████████             ╔═══════════════════════════════╗
+      ██████████████████         ║  B A G   O F   H O L D I N G  ║
+    ██░░██████████████████       ╚═══════════════════════════════╝
+  ████░░████████████████████
+  ████░░████████████████████       +1 to morale on a rainy day
+  ██████████████████████████
+    ██████████████████████         ▶ PRESS START
+      ██████████████████
+```
 
 # Bag of Holding
 
 Reach into it for praise and reminders of your work on a rainy day.
 
-## Credits
+## ▸ Credits
 
 The name comes from the bag of holding in the System Reference Document 5.1.
 
 This work includes material taken from the System Reference Document 5.1 (“SRD 5.1”) by Wizards of the Coast LLC and available at https://dnd.wizards.com/resources/systems-reference-document. The SRD 5.1 is licensed under the Creative Commons Attribution 4.0 International License available at https://creativecommons.org/licenses/by/4.0/legalcode.
 
-## What it does
+## ▸ What it does
 
 A small macOS menu bar app. Drop in screenshots (PNG, JPG), text, markdown,
 transcripts (.txt, .vtt, .srt) and PDFs. Each one is copied into a folder you
@@ -25,7 +37,7 @@ choose (say, Bag of Holding on your Desktop), filed as
 - **Search** finds words in screenshots (read on your Mac by Apple's Vision
   framework), in text and PDFs, and in the tags you give each item.
 
-## Three promises
+## ▸ Three promises
 
 Each one has a check. Run `scripts/verify.sh` after building to see all three.
 
@@ -41,7 +53,7 @@ Each one has a check. Run `scripts/verify.sh` after building to see all three.
    entitlements, and that only `Bag.swift` writes or deletes files, inside
    the bag folder.
 
-## Build from source
+## ▸ Build from source
 
 Needs macOS 14 or later and Xcode (for the Swift toolchain). No dependencies.
 
@@ -56,10 +68,10 @@ scripts/verify.sh
 where the bag should live. **Show bag** opens that folder in Finder;
 right-click it to change folder. `samples/` holds made-up files to try it with.
 
-## Support
+## ▸ Insert coin
 
 If the bag helps, you can buy me a coffee on [Ko-fi](https://ko-fi.com/intentionaut). **Tip ☕** in the app opens the same page in your browser; the app itself still has no network access.
 
-## Licence
+## ▸ Licence
 
 MIT © 2026 Saielle DaSilva. See `LICENSE`.
