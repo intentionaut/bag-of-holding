@@ -1,3 +1,5 @@
+![Bag of Holding: praise and reminders of your work, for a rainy day](docs/banner.png)
+
 # Bag of Holding
 
 Reach into it for praise and reminders of your work on a rainy day.
