@@ -1,16 +1,4 @@
-```text
-          ██████████
-        ██████████████
-            ▒▒▒▒▒▒
-          ██████████             ╔═══════════════════════════════╗
-      ██████████████████         ║  B A G   O F   H O L D I N G  ║
-    ██░░██████████████████       ╚═══════════════════════════════╝
-  ████░░████████████████████
-  ████░░████████████████████       +1 to morale on a rainy day
-  ██████████████████████████
-    ██████████████████████         ▶ PRESS START
-      ██████████████████
-```
+![You got the Bag of Holding! "Great job on that product launch!" +1 to morale on a rainy day](docs/banner.svg)
 
 # Bag of Holding
 
