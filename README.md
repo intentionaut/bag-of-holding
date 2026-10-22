@@ -1,4 +1,4 @@
-![You got the Bag of Holding! "Great job on that product launch!" +1 to morale on a rainy day](docs/banner.svg)
+![You got the Bag of Holding! "Great job on that product launch!" "Your demo made my day!" +1 to morale on a rainy day](docs/banner.svg)
 
 # Bag of Holding
 
