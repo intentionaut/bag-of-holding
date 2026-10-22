@@ -39,7 +39,7 @@ struct RootView: View {
             BagView(bag: bag, home: home, opening: opening)
         } else {
             VStack(alignment: .leading, spacing: 10) {
-                PixelText(string: "Bag of Holding", pixel: 2)
+                HStack(spacing: 8) { PixelText(string: "Bag of Holding", pixel: 2); Pouch() }
                 Text("Where should the bag live?").font(Theme.mono(13, .bold)).foregroundStyle(Theme.cyan)
                 Text("Pick a folder, or make one on your Desktop called Bag of Holding. Everything you add is copied there, filed by year and month.")
                     .foregroundStyle(Theme.dim).fixedSize(horizontal: false, vertical: true)
@@ -52,7 +52,7 @@ struct RootView: View {
             }
             .font(Theme.mono(12)).foregroundStyle(Theme.text)
             .padding(14).frame(width: 520)
-            .background(Theme.night)
+            .background(StarField())
         }
     }
 }

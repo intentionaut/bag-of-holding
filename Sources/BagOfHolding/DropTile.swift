@@ -80,6 +80,7 @@ struct DropTileView: View {
     @State private var note: String?
     @State private var hovering = false
     @AppStorage(Theme.key) private var theme = Theme.palettes[0].name
+    @AppStorage(Theme.customKey) private var customColours = ""
     @State private var drops = 0      // so only the latest drop's timer closes the bar
 
     var body: some View {
@@ -102,7 +103,7 @@ struct DropTileView: View {
         .overlay(Rectangle().strokeBorder(targeted ? Theme.pink : Theme.border, lineWidth: targeted ? 3 : 2))
         .contentShape(Rectangle())
         .foregroundStyle(Theme.text)
-        .id(theme)
+        .id(theme + customColours)
         .onHover { hovering = $0 }
         .onDrop(of: [.fileURL], isTargeted: $targeted) { providers in
             bag.take(providers) { result in

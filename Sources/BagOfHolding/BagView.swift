@@ -17,13 +17,17 @@ struct BagView: View {
     @State private var dropping = false
     @AppStorage("tab") private var tab = "bag"
     @AppStorage(Theme.key) private var theme = Theme.palettes[0].name
+    @AppStorage(Theme.customKey) private var customColours = ""
     @AppStorage("reminderOn") private var reminderOn = false
     @AppStorage("reminderMinutes") private var reminderMinutes = 9 * 60
 
     var body: some View {
         VStack(alignment: .leading, spacing: 10) {
             HStack(alignment: .bottom) {
-                PixelText(string: "Bag of Holding", pixel: 2)
+                HStack(alignment: .center, spacing: 8) {
+                    PixelText(string: "Bag of Holding", pixel: 2)
+                    Pouch()
+                }
                 Spacer()
                 tabs
             }
@@ -39,9 +43,9 @@ struct BagView: View {
         .font(Theme.mono(12)).foregroundStyle(Theme.text)
         .padding(14)
         .frame(width: 520)
-        .background(Theme.night)
+        .background(StarField())
         .environment(\.colorScheme, Theme.scheme)
-        .id(theme)   // redraw everything in the new colours
+        .id(theme + customColours)   // redraw everything in the new colours
         .onAppear {
             bag.refresh()   // pick up anything the `bag` command added while the window was shut
             switch opening {
@@ -116,10 +120,7 @@ struct BagView: View {
 
     private var settings: some View {
         VStack(alignment: .leading, spacing: 12) {
-            Picker("Theme", selection: $theme) {
-                ForEach(Theme.palettes, id: \.name) { Text($0.name).tag($0.name) }
-            }
-            .fixedSize()
+            ThemePicker()
             HStack {
                 Toggle("Daily reminder", isOn: $reminderOn)
                 Spacer()

@@ -32,7 +32,7 @@ final class BagWindow {
         }
         // A fresh view each time, so the bag reaches in again and acts on `opening`.
         panel?.contentView = NSHostingView(rootView: RootView(home: home, opening: opening).padding(.top, 14)
-            .background(Theme.night))
+            .background(StarField()))
         NSApp.activate(ignoringOtherApps: true)
         panel?.makeKeyAndOrderFront(nil)
     }

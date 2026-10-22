@@ -1,5 +1,9 @@
 import SwiftUI
 
+private extension CGFloat {
+    func clamped() -> CGFloat { Swift.min(Swift.max(self, 0), 255) }
+}
+
 /// One colour set. `cyan` is the heading colour and `pink` the accent, named after Night climb.
 struct Palette {
     let name: String
@@ -22,10 +26,42 @@ enum Theme {
                 cyan: 0x2F6B33, pink: 0xE07A3A, text: 0x1F2A1C, dim: 0x6F8A6A, edge: 0x1F2A1C),
     ]
     static let key = "theme"
+    static let customKey = "themeCustom"
+    static let custom = "Custom"
 
     static var palette: Palette {
         let name = UserDefaults.standard.string(forKey: key)
+        if name == custom, let p = customPalette(UserDefaults.standard.string(forKey: customKey) ?? "") { return p }
         return palettes.first { $0.name == name } ?? palettes[0]
+    }
+
+    /// The six colours you can pick, in order. The muted text and the dark edge are worked out from them.
+    static let pickable = ["Background", "Cards", "Border", "Headings", "Accent", "Text"]
+
+    static func colours(of p: Palette) -> [UInt32] { [p.night, p.panel, p.border, p.cyan, p.pink, p.text] }
+
+    /// A custom theme is stored as six hex colours, e.g. "161230,0E0A22,8878E0,9FE8FF,FF8AC8,F6EBE2".
+    static func customPalette(_ stored: String) -> Palette? {
+        let c = stored.split(separator: ",").compactMap { UInt32($0, radix: 16) }
+        guard c.count == 6 else { return nil }
+        let dark = luminance(c[0]) < 0.5
+        return Palette(name: custom, dark: dark, night: c[0], panel: c[1], border: c[2], cyan: c[3], pink: c[4],
+                       text: c[5], dim: mix(c[5], c[0], 0.45), edge: dark ? 0x000000 : c[5])
+    }
+
+    static func store(_ colours: [UInt32]) -> String {
+        colours.map { String(format: "%06X", $0) }.joined(separator: ",")
+    }
+
+    private static func luminance(_ c: UInt32) -> Double {
+        (0.299 * Double(c >> 16 & 0xFF) + 0.587 * Double(c >> 8 & 0xFF) + 0.114 * Double(c & 0xFF)) / 255
+    }
+
+    private static func mix(_ a: UInt32, _ b: UInt32, _ t: Double) -> UInt32 {
+        [16, 8, 0].reduce(0) { sum, shift in
+            let x = Double(a >> UInt32(shift) & 0xFF), y = Double(b >> UInt32(shift) & 0xFF)
+            return sum | UInt32((x + (y - x) * t).rounded()) << UInt32(shift)
+        }
     }
 
     static var night: Color { Color(hex: palette.night) }
@@ -44,6 +80,12 @@ enum Theme {
 }
 
 extension Color {
+    var hex: UInt32 {
+        guard let c = NSColor(self).usingColorSpace(.sRGB) else { return 0 }
+        return [c.redComponent, c.greenComponent, c.blueComponent]
+            .reduce(0) { $0 << 8 | UInt32(($1 * 255).rounded().clamped()) }
+    }
+
     init(hex: UInt32) {
         self.init(red: Double(hex >> 16 & 0xFF) / 255, green: Double(hex >> 8 & 0xFF) / 255,
                   blue: Double(hex & 0xFF) / 255)
@@ -101,6 +143,34 @@ struct PixelButtonStyle: ButtonStyle {
     }
 }
 
+/// A few fixed stars, as in the banner's sky. Dimmer on light themes.
+struct StarField: View {
+    var body: some View {
+        Canvas { context, size in
+            var seed: UInt64 = 7
+            for _ in 0..<40 {
+                seed = seed &* 6364136223846793005 &+ 1442695040888963407
+                let x = CGFloat((seed >> 33) % 10_000) / 10_000 * size.width
+                let y = CGFloat((seed >> 13) & 0xFFFF) / 0xFFFF * size.height
+                let s: CGFloat = seed & 3 == 0 ? 3 : 2
+                let bright = Theme.palette.dark ? (seed & 1 == 0 ? 0.8 : 0.4) : 0.35
+                context.fill(Path(CGRect(x: x, y: y, width: s, height: s)),
+                             with: .color((Theme.palette.dark ? Color(hex: 0xE8E0FF) : Theme.border).opacity(bright)))
+            }
+        }
+        .background(Theme.night)
+    }
+}
+
+/// The menu bar pouch, in the theme's accent, for the window title.
+struct Pouch: View {
+    var size: CGFloat = 16
+    var body: some View {
+        Image(nsImage: PouchIcon.image).renderingMode(.template).resizable()
+            .frame(width: size, height: size).foregroundStyle(Theme.pink)
+    }
+}
+
 /// Text in the banner's own 5×7 pixel font. Only the letters the app uses are drawn.
 struct PixelText: View {
     let string: String
@@ -139,5 +209,56 @@ struct PixelText: View {
         }
         .frame(width: CGFloat(chars.count * 6) * pixel, height: 8 * pixel)
         .accessibilityLabel(string)
+    }
+}
+
+/// Slack-style theme picker: a row of ready-made themes, then six colour wells for your own.
+struct ThemePicker: View {
+    @AppStorage(Theme.key) private var theme = Theme.palettes[0].name
+    @AppStorage(Theme.customKey) private var stored = ""
+
+    var body: some View {
+        VStack(alignment: .leading, spacing: 10) {
+            Text("THEME").font(Theme.mono(10, .bold)).foregroundStyle(Theme.cyan)
+            HStack(spacing: 8) {
+                ForEach(Theme.palettes, id: \.name) { p in
+                    Button { theme = p.name } label: { swatch(p, selected: theme == p.name) }
+                        .buttonStyle(.plain).help(p.name)
+                }
+            }
+            Text("CUSTOM").font(Theme.mono(10, .bold)).foregroundStyle(Theme.cyan)
+            HStack(spacing: 10) {
+                ForEach(Array(Theme.pickable.enumerated()), id: \.offset) { i, label in
+                    ColorPicker(selection: well(i), supportsOpacity: false) { EmptyView() }
+                        .labelsHidden().help(label)
+                }
+                Text(theme == Theme.custom ? "In use" : "Change a colour to make your own")
+                    .font(Theme.mono(10)).foregroundStyle(Theme.dim)
+            }
+        }
+    }
+
+    private func swatch(_ p: Palette, selected: Bool) -> some View {
+        VStack(spacing: 0) {
+            HStack(spacing: 0) {
+                Color(hex: p.night); Color(hex: p.border); Color(hex: p.pink)
+            }
+            .frame(width: 66, height: 22)
+            Text(p.name).font(Theme.mono(8, .bold)).foregroundStyle(Color(hex: p.text))
+                .frame(width: 66, height: 14).background(Color(hex: p.panel))
+        }
+        .overlay(Rectangle().strokeBorder(selected ? Theme.pink : Theme.edge.opacity(0.5), lineWidth: selected ? 3 : 1))
+    }
+
+    /// Editing a colour switches to Custom, starting from whichever theme is showing.
+    private func well(_ i: Int) -> Binding<Color> {
+        Binding(
+            get: { Color(hex: Theme.colours(of: Theme.palette)[i]) },
+            set: { colour in
+                var colours = Theme.colours(of: Theme.palette)
+                colours[i] = colour.hex
+                stored = Theme.store(colours)
+                theme = Theme.custom
+            })
     }
 }
