@@ -67,6 +67,20 @@ extension View {
     func dialogueBox(lit: Bool = false) -> some View { modifier(DialogueBox(lit: lit)) }
 }
 
+/// A tab: lit border and heading colour when selected.
+struct TabStyle: ButtonStyle {
+    let selected: Bool
+    func makeBody(configuration: Configuration) -> some View {
+        configuration.label.textCase(.uppercase)
+            .font(Theme.mono(11, .bold))
+            .foregroundStyle(selected ? Theme.cyan : configuration.isPressed ? Theme.pink : Theme.dim)
+            .padding(.horizontal, 8).padding(.vertical, 4)
+            .background(selected ? Theme.panel : .clear)
+            .overlay(Rectangle().strokeBorder(selected ? Theme.border : .clear, lineWidth: 2))
+            .contentShape(Rectangle())
+    }
+}
+
 /// Menu-style buttons: uppercase, square, with a pink ▶ cursor on hover like a game menu.
 struct PixelButtonStyle: ButtonStyle {
     var small = false

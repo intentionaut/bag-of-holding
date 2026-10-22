@@ -15,66 +15,24 @@ struct BagView: View {
     @State private var draft = ""
     @State private var problem: String?
     @State private var dropping = false
+    @AppStorage("tab") private var tab = "bag"
     @AppStorage(Theme.key) private var theme = Theme.palettes[0].name
     @AppStorage("reminderOn") private var reminderOn = false
     @AppStorage("reminderMinutes") private var reminderMinutes = 9 * 60
 
     var body: some View {
         VStack(alignment: .leading, spacing: 10) {
-            PixelText(string: "Bag of Holding", pixel: 2)
-            TextField("Search the bag", text: $query)
-                .textFieldStyle(.plain).font(Theme.mono(12)).foregroundStyle(Theme.text)
-                .padding(6).background(Theme.panel)
-                .overlay(Rectangle().strokeBorder(Theme.border.opacity(searching ? 1 : 0.5), lineWidth: 2))
-                .focused($searching)
-
-            Group {
-                if bag.items.isEmpty { emptyBag }
-                else if !query.isEmpty { results }
-                else { cards }
+            HStack(alignment: .bottom) {
+                PixelText(string: "Bag of Holding", pixel: 2)
+                Spacer()
+                tabs
             }
-            .frame(maxWidth: .infinity, minHeight: 220, maxHeight: 640)
-            .overlay(Rectangle().strokeBorder(Theme.pink, lineWidth: dropping ? 3 : 0))
-            .onDrop(of: [.fileURL], isTargeted: $dropping, perform: drop)
-
+            switch tab {
+            case "add": adding
+            case "settings": settings
+            default: reaching
+            }
             if let problem { Text(problem).font(Theme.mono(11)).foregroundStyle(Theme.pink) }
-            if pasting { paste }
-
-            HStack {
-                Button("Another") { reach(1) }.keyboardShortcut(.return)
-                Button("I'm having a bad day") { reach(3) }
-            }
-            .disabled(bag.items.isEmpty)
-
-            Rectangle().fill(Theme.border.opacity(0.4)).frame(height: 2)
-            HStack {
-                Menu("Add") {
-                    Button("Choose files…", action: choose)
-                    Button("Drop bar (drag from Finder)") { DropTile.shared.show(bag: bag) }
-                    Button("Paste text") { pasting.toggle() }
-                }
-                .menuStyle(.borderlessButton).menuIndicator(.hidden).fixedSize()
-                .font(Theme.mono(12, .bold)).foregroundStyle(Theme.text)
-                Spacer()
-                Button("Tip ☕") { NSWorkspace.shared.open(Self.tipJar) }
-                    .help("Opens Ko-fi in your browser. The app itself never connects.")
-                Button("Show bag") { NSWorkspace.shared.activateFileViewerSelecting([bag.folder]) }
-                    .contextMenu { if let home { Button("Change folder…") { home.choose() } } }
-                Button("Quit") { NSApp.terminate(nil) }
-            }
-            HStack {
-                Picker("Theme", selection: $theme) {
-                    ForEach(Theme.palettes, id: \.name) { Text($0.name).tag($0.name) }
-                }
-                .fixedSize()
-                Spacer()
-            }
-            HStack {
-                Toggle("Daily reminder", isOn: $reminderOn)
-                Spacer()
-                DatePicker("Time", selection: reminderTime, displayedComponents: .hourAndMinute)
-                    .labelsHidden().disabled(!reminderOn)
-            }
         }
         .buttonStyle(PixelButtonStyle())
         .toggleStyle(.switch).tint(Theme.pink)
@@ -86,10 +44,10 @@ struct BagView: View {
         .id(theme)   // redraw everything in the new colours
         .onAppear {
             switch opening {
-            case .added(let id): shown = [id]
-            case .badDay: reach(3)
-            case .search: searching = true
-            case .another: reach(1)
+            case .added(let id): shown = [id]; tab = "bag"
+            case .badDay: reach(3); tab = "bag"
+            case .search: tab = "bag"; searching = true
+            case .another: reach(1); tab = "bag"
             case .browse: if shown.isEmpty { reach(1) }
             }
             reschedule()
@@ -100,6 +58,89 @@ struct BagView: View {
 
     /// The one link in the app. macOS hands it to your browser; the app has no network access.
     static let tipJar = URL(string: "https://ko-fi.com/intentionaut")!
+
+    // MARK: Tabs
+
+    private var tabs: some View {
+        HStack(spacing: 2) {
+            ForEach([("bag", "Bag"), ("add", "Add"), ("settings", "Settings")], id: \.0) { key, label in
+                Button(label) { tab = key }
+                    .buttonStyle(TabStyle(selected: tab == key))
+            }
+        }
+    }
+
+    private var reaching: some View {
+        VStack(alignment: .leading, spacing: 10) {
+            TextField("Search the bag", text: $query)
+                .textFieldStyle(.plain).font(Theme.mono(12)).foregroundStyle(Theme.text)
+                .padding(6).background(Theme.panel)
+                .overlay(Rectangle().strokeBorder(Theme.border.opacity(searching ? 1 : 0.5), lineWidth: 2))
+                .focused($searching)
+            Group {
+                if bag.items.isEmpty { emptyBag }
+                else if !query.isEmpty { results }
+                else { cards }
+            }
+            .frame(maxWidth: .infinity, minHeight: 220, maxHeight: 560)
+            .overlay(Rectangle().strokeBorder(Theme.pink, lineWidth: dropping ? 3 : 0))
+            .onDrop(of: [.fileURL], isTargeted: $dropping, perform: drop)
+            HStack {
+                Button("Another") { reach(1) }.keyboardShortcut(.return)
+                Button("I'm having a bad day") { reach(3) }
+            }
+            .disabled(bag.items.isEmpty)
+        }
+    }
+
+    private var adding: some View {
+        VStack(alignment: .leading, spacing: 10) {
+            VStack(spacing: 6) {
+                Text("DROP FILES HERE").font(Theme.mono(13, .bold)).foregroundStyle(Theme.cyan)
+                Text("Screenshots, text, markdown, transcripts and PDFs. Each is copied in; your original stays put.")
+                    .multilineTextAlignment(.center).foregroundStyle(Theme.dim)
+            }
+            .frame(maxWidth: .infinity, minHeight: 110)
+            .dialogueBox(lit: dropping)
+            .onDrop(of: [.fileURL], isTargeted: $dropping, perform: drop)
+            HStack {
+                Button("Choose files…", action: choose)
+                Button("Drop bar") { DropTile.shared.show(bag: bag) }
+                    .help("A small floating bar you can drag files onto from Finder")
+                Button("Paste text") { pasting.toggle() }
+            }
+            if pasting { paste }
+        }
+    }
+
+    private var settings: some View {
+        VStack(alignment: .leading, spacing: 12) {
+            Picker("Theme", selection: $theme) {
+                ForEach(Theme.palettes, id: \.name) { Text($0.name).tag($0.name) }
+            }
+            .fixedSize()
+            HStack {
+                Toggle("Daily reminder", isOn: $reminderOn)
+                Spacer()
+                DatePicker("Time", selection: reminderTime, displayedComponents: .hourAndMinute)
+                    .labelsHidden().disabled(!reminderOn)
+            }
+            HStack {
+                Text("Folder").foregroundStyle(Theme.dim)
+                Text(bag.folder.lastPathComponent).lineLimit(1).truncationMode(.middle)
+                Spacer()
+                Button("Show") { NSWorkspace.shared.activateFileViewerSelecting([bag.folder]) }
+                if let home { Button("Change…") { home.choose() } }
+            }
+            Rectangle().fill(Theme.border.opacity(0.4)).frame(height: 2)
+            HStack {
+                Button("Tip ☕") { NSWorkspace.shared.open(Self.tipJar) }
+                    .help("Opens Ko-fi in your browser. The app itself never connects.")
+                Spacer()
+                Button("Quit") { NSApp.terminate(nil) }
+            }
+        }
+    }
 
     // MARK: Contents
 
@@ -164,6 +205,7 @@ struct BagView: View {
                 Button("Put it in the bag") {
                     do {
                         shown = [try bag.addText(draft).id]
+                        tab = "bag"
                         draft = ""; pasting = false; problem = nil
                     } catch { problem = error.localizedDescription }
                 }
@@ -190,6 +232,7 @@ struct BagView: View {
         do {
             shown = [try bag.take(url).id]
             problem = nil
+            tab = "bag"
         } catch {
             problem = error.localizedDescription
         }
@@ -198,7 +241,7 @@ struct BagView: View {
     private func drop(_ providers: [NSItemProvider]) -> Bool {
         bag.take(providers) { result in
             if case .failure(let error) = result { problem = error.localizedDescription }
-            else { problem = nil; shown = bag.items.last.map { [$0.id] } ?? [] }
+            else { problem = nil; shown = bag.items.last.map { [$0.id] } ?? []; tab = "bag" }
         }
         return true
     }

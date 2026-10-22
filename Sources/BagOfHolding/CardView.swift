@@ -32,17 +32,17 @@ struct CardView: View {
                 .overlay(Rectangle().strokeBorder(Theme.edge, lineWidth: 2))
         } else {
             Text(words.isEmpty ? placeholder : "“\(words.trimmingCharacters(in: CharacterSet(charactersIn: "\"“”")))”")
-                .font(Theme.mono(15, .medium))
+                .font(Theme.mono(13, .medium))
                 .foregroundStyle(Theme.text)
-                .lineSpacing(5)
+                .lineSpacing(3)
                 .textSelection(.enabled)
                 .frame(maxWidth: .infinity, alignment: .leading)
         }
         if let from = item.from, !from.isEmpty {
-            Text("— \(from)").font(Theme.mono(13, .bold)).foregroundStyle(Theme.cyan)
+            Text("— \(from)").font(Theme.mono(12, .bold)).foregroundStyle(Theme.cyan)
         }
         if let about = item.about, !about.isEmpty {
-            Text(about).font(Theme.mono(12)).foregroundStyle(Theme.dim)
+            Text(about).font(Theme.mono(11)).foregroundStyle(Theme.dim)
         }
         HStack {
             Text(item.tags.isEmpty ? item.originalName : item.tags.joined(separator: ", "))
