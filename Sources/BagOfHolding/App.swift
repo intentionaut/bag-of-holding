@@ -51,7 +51,7 @@ struct RootView: View {
                 .buttonStyle(PixelButtonStyle())
             }
             .font(Theme.mono(12)).foregroundStyle(Theme.text)
-            .padding(14).frame(width: 520)
+            .padding(14).padding(.top, 14).frame(width: 520)
             .background(StarField())
         }
     }

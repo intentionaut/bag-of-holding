@@ -31,10 +31,11 @@ struct BagView: View {
                 Spacer()
                 tabs
             }
+            .id(look)
             switch tab {
-            case "add": adding
+            case "add": adding.id(look)
             case "settings": settings
-            default: reaching
+            default: reaching.id(look)
             }
             if let problem { Text(problem).font(Theme.mono(11)).foregroundStyle(Theme.pink) }
         }
@@ -42,10 +43,10 @@ struct BagView: View {
         .toggleStyle(.switch).tint(Theme.pink)
         .font(Theme.mono(12)).foregroundStyle(Theme.text)
         .padding(14)
+        .padding(.top, 14)   // room for the window's close button
         .frame(width: 520)
-        .background(StarField())
+        .background(StarField().id(look))
         .environment(\.colorScheme, Theme.scheme)
-        .id(theme + customColours)   // redraw everything in the new colours
         .onAppear {
             bag.refresh()   // pick up anything the `bag` command added while the window was shut
             switch opening {
@@ -63,6 +64,10 @@ struct BagView: View {
 
     /// The one link in the app. macOS hands it to your browser; the app has no network access.
     static let tipJar = URL(string: "https://ko-fi.com/intentionaut")!
+
+    /// Changes whenever the colours do. Views tagged with it are rebuilt in the new colours;
+    /// the theme picker isn't, so the colour panel keeps updating live.
+    private var look: String { theme + customColours }
 
     // MARK: Tabs
 
@@ -120,7 +125,8 @@ struct BagView: View {
 
     private var settings: some View {
         VStack(alignment: .leading, spacing: 12) {
-            ThemePicker()
+            ThemePicker()   // never rebuilt, so an open colour panel stays connected while you drag
+            VStack(alignment: .leading, spacing: 12) {
             HStack {
                 Toggle("Daily reminder", isOn: $reminderOn)
                 Spacer()
@@ -141,6 +147,8 @@ struct BagView: View {
                 Spacer()
                 Button("Quit") { NSApp.terminate(nil) }
             }
+            }
+            .id(look)
         }
     }
 
