@@ -5,6 +5,7 @@ import UniformTypeIdentifiers
 
 struct BagView: View {
     @ObservedObject var bag: Bag
+    var home: Home?
     var opening = Opening.browse
     @FocusState private var searching: Bool
     @State private var picker = Picker<UUID>()
@@ -50,6 +51,7 @@ struct BagView: View {
                 Button("Tip ☕") { NSWorkspace.shared.open(Self.tipJar) }
                     .help("Opens Ko-fi in your browser. The app itself never connects.")
                 Button("Show bag") { NSWorkspace.shared.activateFileViewerSelecting([bag.folder]) }
+                    .contextMenu { if let home { Button("Change folder…") { home.choose() } } }
                 Button("Quit") { NSApp.terminate(nil) }
             }
             HStack {

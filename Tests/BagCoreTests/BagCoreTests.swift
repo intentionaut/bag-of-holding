@@ -77,7 +77,7 @@ final class BagTests: XCTestCase {
         let bag = Bag(folder: dir.appendingPathComponent("Bag"))
         let item = try bag.add(original, on: day)
 
-        XCTAssertEqual(item.file, "2026-10-21 note.md")
+        XCTAssertEqual(item.file, "2026/10 October/2026-10-21 note.md")
         XCTAssertEqual(try Data(contentsOf: original), Data("Shipped the thing.".utf8))
         let after = try FileManager.default.attributesOfItem(atPath: original.path)
         XCTAssertEqual(before[.modificationDate] as? Date, after[.modificationDate] as? Date)
@@ -89,7 +89,7 @@ final class BagTests: XCTestCase {
         try Data("x".utf8).write(to: original)
         let bag = Bag(folder: dir.appendingPathComponent("Bag"))
         try bag.add(original, on: day)
-        XCTAssertEqual(try bag.add(original, on: day).file, "2026-10-21 note 2.md")
+        XCTAssertEqual(try bag.add(original, on: day).file, "2026/10 October/2026-10-21 note 2.md")
     }
 
     func testIndexSurvivesReopening() throws {
@@ -139,6 +139,19 @@ final class BagTests: XCTestCase {
         let fake = dir.appendingPathComponent("folder.png")
         try FileManager.default.createDirectory(at: fake, withIntermediateDirectories: true)
         XCTAssertThrowsError(try Bag(folder: dir.appendingPathComponent("Bag")).add(fake))
+    }
+
+    func testOldBagMovesAcrossFiledByMonth() throws {
+        let original = dir.appendingPathComponent("note.md")
+        try Data("kind".utf8).write(to: original)
+        let old = Bag(folder: dir.appendingPathComponent("Old"))
+        let item = try old.add(original, on: day)
+        let new = Bag(folder: dir.appendingPathComponent("New"))
+        XCTAssertEqual(new.takeAll(from: old), 1)
+        XCTAssertEqual(new.takeAll(from: old), 0)   // never twice
+        XCTAssertEqual(new.items.first?.file, "2026/10 October/2026-10-21 note.md")
+        XCTAssertEqual(try Data(contentsOf: new.url(for: new.items[0])), Data("kind".utf8))
+        XCTAssertTrue(FileManager.default.fileExists(atPath: old.url(for: item).path))
     }
 
     func testUnsupportedFileIsRefused() throws {

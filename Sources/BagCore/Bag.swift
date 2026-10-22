@@ -19,12 +19,15 @@ public final class Bag: ObservableObject {
 
     private var indexURL: URL { folder.appendingPathComponent("index.json") }
 
-    private static let stamp: DateFormatter = {
+    private static func format(_ pattern: String) -> DateFormatter {
         let f = DateFormatter()
         f.locale = Locale(identifier: "en_US_POSIX")
-        f.dateFormat = "yyyy-MM-dd"
+        f.dateFormat = pattern
         return f
-    }()
+    }
+    private static let stamp = format("yyyy-MM-dd")
+    private static let year = format("yyyy")
+    private static let month = format("MM MMMM")   // "10 October", so months sort in order
 
     public init(folder: URL) {
         self.folder = folder
@@ -42,8 +45,8 @@ public final class Bag: ObservableObject {
         }
     }
 
-    /// Inside the sandbox this resolves to the app's own container.
-    public static var standard: Bag {
+    /// Where bags lived before you chose a folder: the app's own container.
+    public static var inContainer: Bag {
         let support = FileManager.default.urls(for: .applicationSupportDirectory, in: .userDomainMask)[0]
         return Bag(folder: support.appendingPathComponent("Bag", isDirectory: true))
     }
@@ -57,7 +60,7 @@ public final class Bag: ObservableObject {
         else { throw BagError.unsupported(source.lastPathComponent) }
         let copy = freeName(for: source.lastPathComponent, on: date)
         try FileManager.default.copyItem(at: source, to: copy)
-        let item = Item(file: copy.lastPathComponent, originalName: source.lastPathComponent,
+        let item = Item(file: relative(copy), originalName: source.lastPathComponent,
                         added: date, kind: kind)
         items.append(item)
         save()
@@ -68,7 +71,7 @@ public final class Bag: ObservableObject {
     public func addText(_ text: String, on date: Date = Date()) throws -> Item {
         let copy = freeName(for: "pasted.txt", on: date)
         try text.write(to: copy, atomically: true, encoding: .utf8)
-        let item = Item(file: copy.lastPathComponent, originalName: "Pasted text",
+        let item = Item(file: relative(copy), originalName: "Pasted text",
                         added: date, kind: .text, text: text)
         items.append(item)
         save()
@@ -85,7 +88,8 @@ public final class Bag: ObservableObject {
     public func remove(_ id: UUID) throws {
         guard let i = items.firstIndex(where: { $0.id == id }) else { return }
         let copy = url(for: items[i]).standardizedFileURL
-        guard copy.deletingLastPathComponent() == folder.standardizedFileURL else { return }
+        let root = folder.standardizedFileURL.path + "/"
+        guard copy.path.hasPrefix(root) else { return }
         if FileManager.default.fileExists(atPath: copy.path) { try FileManager.default.removeItem(at: copy) }
         items.remove(at: i)
         save()
@@ -93,15 +97,41 @@ public final class Bag: ObservableObject {
 
     public func url(for item: Item) -> URL { folder.appendingPathComponent(item.file) }
 
+    /// Copies everything from another bag into this one, filed by the date each item was added.
+    /// The other bag is only read. Returns how many came across.
+    @discardableResult
+    public func takeAll(from other: Bag) -> Int {
+        var taken = 0
+        for var item in other.items where !items.contains(where: { $0.id == item.id }) {
+            var name = (item.file as NSString).lastPathComponent
+            if name.range(of: #"^\d{4}-\d{2}-\d{2} "#, options: .regularExpression) != nil { name = String(name.dropFirst(11)) }
+            let copy = freeName(for: name, on: item.added)
+            guard (try? FileManager.default.copyItem(at: other.url(for: item), to: copy)) != nil else { continue }
+            item.file = relative(copy)
+            items.append(item)
+            taken += 1
+        }
+        if taken > 0 { save() }
+        return taken
+    }
+
+    private func relative(_ url: URL) -> String {
+        String(url.standardizedFileURL.path.dropFirst(folder.standardizedFileURL.path.count + 1))
+    }
+
+    /// A free name in this month's folder: "2026/10 October/2026-10-22 note.md".
     private func freeName(for name: String, on date: Date) -> URL {
         let base = (name as NSString).deletingPathExtension
         let ext = (name as NSString).pathExtension
         let stamp = Self.stamp.string(from: date)
+        let shelf = folder.appendingPathComponent(Self.year.string(from: date), isDirectory: true)
+            .appendingPathComponent(Self.month.string(from: date), isDirectory: true)
+        try? FileManager.default.createDirectory(at: shelf, withIntermediateDirectories: true)
         var n = 1
         var url: URL
         repeat {
             let suffix = n == 1 ? "" : " \(n)"
-            url = folder.appendingPathComponent("\(stamp) \(base)\(suffix)" + (ext.isEmpty ? "" : ".\(ext)"))
+            url = shelf.appendingPathComponent("\(stamp) \(base)\(suffix)" + (ext.isEmpty ? "" : ".\(ext)"))
             n += 1
         } while FileManager.default.fileExists(atPath: url.path)
         return url

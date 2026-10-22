@@ -17,7 +17,7 @@ public enum Kind: String, Codable {
 
 public struct Item: Codable, Identifiable, Hashable {
     public let id: UUID
-    public let file: String          // name of the copy inside the bag folder
+    public internal(set) var file: String   // path of the copy inside the bag folder, e.g. "2026/10 October/2026-10-22 note.md"
     public let originalName: String
     public let added: Date
     public let kind: Kind
