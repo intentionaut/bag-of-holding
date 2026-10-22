@@ -1,30 +1,58 @@
+import AppKit
 import BagCore
 import SwiftUI
 
 @main
 struct BagOfHoldingApp: App {
-    @StateObject private var home = Home()
+    @NSApplicationDelegateAdaptor(MenuBar.self) private var menuBar
 
     var body: some Scene {
-        MenuBarExtra {
-            if let bag = home.bag {
-                BagView(bag: bag, home: home)
-            } else {
-                VStack(alignment: .leading, spacing: 10) {
-                    Text("Where should the bag live?").font(.headline)
-                    Text("Pick a folder, or make one on your Desktop called Bag of Holding. Everything you add is copied there, filed by year and month.")
-                        .foregroundStyle(.secondary).fixedSize(horizontal: false, vertical: true)
-                    HStack {
-                        Button("Choose folder…") { home.choose() }.keyboardShortcut(.defaultAction)
-                        Spacer()
-                        Button("Quit") { NSApp.terminate(nil) }
-                    }
+        Settings { EmptyView() }
+    }
+}
+
+/// The pouch in the menu bar. Clicking it opens the bag in its own window, which stays open
+/// until you close it, so you can drag files onto it from Finder.
+final class MenuBar: NSObject, NSApplicationDelegate {
+    private var item: NSStatusItem?
+
+    func applicationDidFinishLaunching(_ notification: Notification) {
+        BagWindow.shared.home = Home()
+        let item = NSStatusBar.system.statusItem(withLength: NSStatusItem.squareLength)
+        item.button?.image = PouchIcon.image
+        item.button?.toolTip = "Bag of Holding"
+        item.button?.target = self
+        item.button?.action = #selector(toggle)
+        self.item = item
+    }
+
+    @objc private func toggle() { BagWindow.shared.toggle() }
+}
+
+/// What the window shows: the bag, or the first-run folder choice.
+struct RootView: View {
+    @ObservedObject var home: Home
+    var opening = Opening.browse
+
+    var body: some View {
+        if let bag = home.bag {
+            BagView(bag: bag, home: home, opening: opening)
+        } else {
+            VStack(alignment: .leading, spacing: 10) {
+                PixelText(string: "Bag of Holding", pixel: 2)
+                Text("Where should the bag live?").font(Theme.mono(13, .bold)).foregroundStyle(Theme.cyan)
+                Text("Pick a folder, or make one on your Desktop called Bag of Holding. Everything you add is copied there, filed by year and month.")
+                    .foregroundStyle(Theme.dim).fixedSize(horizontal: false, vertical: true)
+                HStack {
+                    Button("Choose folder…") { home.choose() }.keyboardShortcut(.defaultAction)
+                    Spacer()
+                    Button("Quit") { NSApp.terminate(nil) }
                 }
-                .padding(14).frame(width: 360)
+                .buttonStyle(PixelButtonStyle())
             }
-        } label: {
-            Image(nsImage: PouchIcon.image)
+            .font(Theme.mono(12)).foregroundStyle(Theme.text)
+            .padding(14).frame(width: 520)
+            .background(Theme.night)
         }
-        .menuBarExtraStyle(.window)
     }
 }

@@ -76,7 +76,6 @@ enum Opening: Equatable { case browse, another, badDay, search, added(UUID) }
 struct DropTileView: View {
     @ObservedObject var bag: Bag
     @State private var targeted = false
-    @State private var open = false
     @State private var opening = Opening.browse
     @State private var note: String?
     @State private var hovering = false
@@ -116,7 +115,6 @@ struct DropTileView: View {
             }
             return true
         }
-        .popover(isPresented: $open, arrowEdge: .bottom) { BagView(bag: bag, opening: opening) }
     }
 
     /// One menu-bar-sized, monochrome button.
@@ -139,8 +137,7 @@ struct DropTileView: View {
     private func reveal(_ what: Opening) {
         NSApp.activate(ignoringOtherApps: true)
         if case .browse = what, case .added = opening {} else { opening = what }
-        open = false                                   // reopen so the bag acts on the new choice
-        DispatchQueue.main.async { open = true }
+        BagWindow.shared.show(opening)
     }
 
     /// Says what happened, then closes after five seconds unless you're using it.
@@ -151,7 +148,7 @@ struct DropTileView: View {
         DispatchQueue.main.asyncAfter(deadline: .now() + 5) {
             guard mine == drops else { return }
             note = nil
-            if !open && !hovering { DropTile.shared.hide() }
+            if !hovering { DropTile.shared.hide() }
         }
     }
 }

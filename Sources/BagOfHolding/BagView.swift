@@ -7,7 +7,6 @@ struct BagView: View {
     @ObservedObject var bag: Bag
     var home: Home?
     var opening = Opening.browse
-    var pinned = false
     @FocusState private var searching: Bool
     @State private var picker = Picker<UUID>()
     @State private var shown: [UUID] = []
@@ -27,11 +26,6 @@ struct BagView: View {
                 PixelText(string: "Bag of Holding", pixel: 2)
                 Spacer()
                 tabs
-                if !pinned {
-                    Button { BagWindow.shared.show(bag: bag, home: home) } label: { Image(systemName: "pin") }
-                        .buttonStyle(TabStyle(selected: false))
-                        .help("Keep the bag open in its own window, so you can drag files onto it")
-                }
             }
             switch tab {
             case "add": adding

@@ -6,12 +6,18 @@ import SwiftUI
 /// Like Dustbunny's panel: floats above other windows, moves by its background, closes with × or Esc.
 final class BagWindow {
     static let shared = BagWindow()
+    var home: Home!
     private var panel: NSPanel?
 
-    func show(bag: Bag, home: Home?) {
+    /// The menu bar click: open the bag, or put it away if it's already in front.
+    func toggle() {
+        if let panel, panel.isVisible, panel.isKeyWindow { panel.close() } else { show() }
+    }
+
+    func show(_ opening: Opening = .browse) {
         if panel == nil {
             let panel = KeyPanel(contentRect: NSRect(x: 0, y: 0, width: 520, height: 560),
-                                 styleMask: [.titled, .closable, .fullSizeContentView, .nonactivatingPanel],
+                                 styleMask: [.titled, .closable, .fullSizeContentView],
                                  backing: .buffered, defer: false)
             panel.titleVisibility = .hidden
             panel.titlebarAppearsTransparent = true
@@ -20,12 +26,13 @@ final class BagWindow {
             panel.isMovableByWindowBackground = true
             panel.isReleasedWhenClosed = false
             panel.collectionBehavior = [.canJoinAllSpaces, .fullScreenAuxiliary]
-            panel.contentView = NSHostingView(rootView: BagView(bag: bag, home: home, pinned: true)
-                .padding(.top, 14))
-            if !panel.setFrameUsingName("BagWindow") { panel.center() }
             panel.setFrameAutosaveName("BagWindow")
+            if !panel.setFrameUsingName("BagWindow") { panel.center() }
             self.panel = panel
         }
+        // A fresh view each time, so the bag reaches in again and acts on `opening`.
+        panel?.contentView = NSHostingView(rootView: RootView(home: home, opening: opening).padding(.top, 14)
+            .background(Theme.night))
         NSApp.activate(ignoringOtherApps: true)
         panel?.makeKeyAndOrderFront(nil)
     }
