@@ -21,7 +21,7 @@ struct BagView: View {
 
     var body: some View {
         VStack(alignment: .leading, spacing: 10) {
-            PixelText(string: "Bag of Holding")
+            PixelText(string: "Bag of Holding", pixel: 2)
             TextField("Search the bag", text: $query)
                 .textFieldStyle(.plain).font(Theme.mono(12)).foregroundStyle(Theme.text)
                 .padding(6).background(Theme.panel)
