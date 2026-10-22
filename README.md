@@ -22,6 +22,10 @@ choose (say, Bag of Holding on your Desktop), filed as
 - **Daily reminder** sends one notification at a time you set. Off by default.
 - **Edit** any card to set the praise in clean words, who it was from, and what
   it was about. The text read from a screenshot is kept alongside your version.
+- **Themes**: five ready-made, three light and two dark, or pick your own
+  colours in Settings. Stars optional.
+- The bag opens in its own window and stays open until you close it, so you
+  can drag files onto it from Finder.
 - **Search** finds words in screenshots (read on your Mac by Apple's Vision
   framework), in text and PDFs, and in the tags you give each item.
 
@@ -53,8 +57,7 @@ scripts/verify.sh
 ```
 
 `build.sh` signs the app ad hoc. The first time you open it, it asks
-where the bag should live. **Show bag** opens that folder in Finder;
-right-click it to change folder. `samples/` holds made-up files to try it with.
+where the bag should live. Settings shows that folder and lets you change it. `samples/` holds made-up files to try it with.
 
 ## ▸ For agents and scripts
 
