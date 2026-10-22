@@ -43,6 +43,7 @@ struct BagView: View {
         .environment(\.colorScheme, Theme.scheme)
         .id(theme)   // redraw everything in the new colours
         .onAppear {
+            bag.refresh()   // pick up anything the `bag` command added while the window was shut
             switch opening {
             case .added(let id): shown = [id]; tab = "bag"
             case .badDay: reach(3); tab = "bag"

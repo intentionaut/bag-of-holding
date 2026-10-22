@@ -154,6 +154,14 @@ final class BagTests: XCTestCase {
         XCTAssertTrue(FileManager.default.fileExists(atPath: old.url(for: item).path))
     }
 
+    func testTwoWritersDoNotOverwriteEachOther() throws {
+        let folder = dir.appendingPathComponent("Bag")
+        let app = Bag(folder: folder), cli = Bag(folder: folder)
+        try cli.addText("from the command line", on: day)
+        try app.addText("from the app", on: day)   // app hadn't seen the first one
+        XCTAssertEqual(Bag(folder: folder).items.count, 2)
+    }
+
     func testUnsupportedFileIsRefused() throws {
         let original = dir.appendingPathComponent("song.mp3")
         try Data().write(to: original)

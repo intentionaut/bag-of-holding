@@ -56,6 +56,41 @@ scripts/verify.sh
 where the bag should live. **Show bag** opens that folder in Finder;
 right-click it to change folder. `samples/` holds made-up files to try it with.
 
+## ▸ For agents and scripts
+
+`./build.sh` also builds `build/bag`, a command for the same bag folder. Copy it
+somewhere on your PATH (say `~/bin`).
+
+```
+bag random            # one item at random
+bag random 3          # a bad day
+bag search launch
+bag add ~/Desktop/screenshot.png
+bag add --text "Your demo made my day!" --from Sam --tags demo
+bag edit 497e1b1f --about "Q3 launch"
+bag remove 497e1b1f
+```
+
+It looks in `~/Desktop/Bag of Holding` unless you pass `--folder` or set
+`BAG_FOLDER`. Put `--json` first for JSON.
+
+`bag mcp` serves the same over MCP, on stdin and stdout, so an agent can reach in.
+No port is opened. In Claude Code:
+
+```
+claude mcp add bag-of-holding -- ~/bin/bag mcp
+```
+
+Agents get `reach_in`, `search`, `list`, `show`, `add_file`, `add_text`, `edit`
+and `remove`. `remove` is marked destructive, so most agents ask before using it.
+
+`bag random` fits anywhere a script runs: a cron job, a launchd agent, or a
+morning routine your agent already has.
+
+`bag` runs outside the app's sandbox, as you, so macOS may ask whether your
+terminal can use the Desktop folder. It reads only the bag folder and the files
+you tell it to add, and writes only inside the bag folder.
+
 ## ▸ Insert coin
 
 If the bag helps, you can buy me a coffee on [Ko-fi](https://ko-fi.com/intentionaut). **Tip ☕** in the app opens the same page in your browser; the app itself still has no network access.

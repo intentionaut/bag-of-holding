@@ -32,17 +32,24 @@ public final class Bag: ObservableObject {
     public init(folder: URL) {
         self.folder = folder
         try? FileManager.default.createDirectory(at: folder, withIntermediateDirectories: true)
-        let decoder = JSONDecoder()
-        decoder.dateDecodingStrategy = .iso8601
-        guard let data = try? Data(contentsOf: indexURL) else { return }
-        if let saved = try? decoder.decode([Item].self, from: data) {
-            items = saved
-        } else {
+        if !refresh() {
             // Unreadable index: keep a copy before the next save writes over it.
             let stamp = Self.stamp.string(from: Date())
             try? FileManager.default.copyItem(at: indexURL,
                                               to: folder.appendingPathComponent("index \(stamp) unreadable.json"))
         }
+    }
+
+    /// Re-reads the index, so changes made by the app and the `bag` command don't overwrite each other.
+    /// Every change below calls this first. Returns false if there is an index it can't read.
+    @discardableResult
+    public func refresh() -> Bool {
+        guard let data = try? Data(contentsOf: indexURL) else { return true }
+        let decoder = JSONDecoder()
+        decoder.dateDecodingStrategy = .iso8601
+        guard let saved = try? decoder.decode([Item].self, from: data) else { return false }
+        if saved != items { items = saved }
+        return true
     }
 
     /// Where bags lived before you chose a folder: the app's own container.
@@ -58,6 +65,7 @@ public final class Bag: ObservableObject {
         guard let kind = Kind(url: source),
               (try? source.resourceValues(forKeys: [.isRegularFileKey]).isRegularFile) == true
         else { throw BagError.unsupported(source.lastPathComponent) }
+        refresh()
         let copy = freeName(for: source.lastPathComponent, on: date)
         try FileManager.default.copyItem(at: source, to: copy)
         let item = Item(file: relative(copy), originalName: source.lastPathComponent,
@@ -69,6 +77,7 @@ public final class Bag: ObservableObject {
 
     @discardableResult
     public func addText(_ text: String, on date: Date = Date()) throws -> Item {
+        refresh()
         let copy = freeName(for: "pasted.txt", on: date)
         try text.write(to: copy, atomically: true, encoding: .utf8)
         let item = Item(file: relative(copy), originalName: "Pasted text",
@@ -79,6 +88,7 @@ public final class Bag: ObservableObject {
     }
 
     public func update(_ id: UUID, _ change: (inout Item) -> Void) {
+        refresh()
         guard let i = items.firstIndex(where: { $0.id == id }) else { return }
         change(&items[i])
         save()
@@ -86,6 +96,7 @@ public final class Bag: ObservableObject {
 
     /// Takes an item out: deletes the bag's own copy and its index entry. Never touches anything outside the bag.
     public func remove(_ id: UUID) throws {
+        refresh()
         guard let i = items.firstIndex(where: { $0.id == id }) else { return }
         let copy = url(for: items[i]).standardizedFileURL
         let root = folder.standardizedFileURL.path + "/"
@@ -101,6 +112,7 @@ public final class Bag: ObservableObject {
     /// The other bag is only read. Returns how many came across.
     @discardableResult
     public func takeAll(from other: Bag) -> Int {
+        refresh()
         var taken = 0
         for var item in other.items where !items.contains(where: { $0.id == item.id }) {
             var name = (item.file as NSString).lastPathComponent
