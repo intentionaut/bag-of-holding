@@ -17,8 +17,8 @@ struct CardView: View {
         VStack(alignment: .leading, spacing: 8) {
             if editing { form } else { card }
         }
-        .padding(12)
-        .background(Color(nsColor: .controlBackgroundColor), in: RoundedRectangle(cornerRadius: 10))
+        .frame(maxWidth: .infinity, alignment: .leading)
+        .dialogueBox(lit: editing)
     }
 
     // MARK: Reading
@@ -29,19 +29,20 @@ struct CardView: View {
             Image(nsImage: image)
                 .resizable().scaledToFit()
                 .frame(maxWidth: .infinity, maxHeight: 480)
-                .clipShape(RoundedRectangle(cornerRadius: 6))
+                .overlay(Rectangle().strokeBorder(Color.black, lineWidth: 2))
         } else {
-            Text(words.isEmpty ? placeholder : words)
-                .font(.system(.title3, design: .serif))
-                .lineSpacing(4)
+            Text(words.isEmpty ? placeholder : "“\(words.trimmingCharacters(in: CharacterSet(charactersIn: "\"“”")))”")
+                .font(Theme.mono(15, .medium))
+                .foregroundStyle(Theme.text)
+                .lineSpacing(5)
                 .textSelection(.enabled)
                 .frame(maxWidth: .infinity, alignment: .leading)
         }
         if let from = item.from, !from.isEmpty {
-            Text("— \(from)").font(.system(.body, design: .serif)).italic()
+            Text("— \(from)").font(Theme.mono(13, .bold)).foregroundStyle(Theme.cyan)
         }
         if let about = item.about, !about.isEmpty {
-            Text(about).font(.callout).foregroundStyle(.secondary)
+            Text(about).font(Theme.mono(12)).foregroundStyle(Theme.dim)
         }
         HStack {
             Text(item.tags.isEmpty ? item.originalName : item.tags.joined(separator: ", "))
@@ -49,7 +50,7 @@ struct CardView: View {
             Spacer()
             Text(item.added, format: .dateTime.day().month().year())
         }
-        .font(.caption).foregroundStyle(.secondary)
+        .font(Theme.mono(10)).foregroundStyle(Theme.dim)
         HStack {
             Button("Edit", action: startEditing)
             Button("Remove") { confirmingRemove = true }
@@ -58,7 +59,8 @@ struct CardView: View {
                 Button(showImage ? "Show text" : "Show screenshot") { showImage.toggle() }
             }
         }
-        .buttonStyle(.link).font(.caption)
+        .buttonStyle(PixelButtonStyle(small: true))
+
         .confirmationDialog("Take this out of the bag?", isPresented: $confirmingRemove) {
             Button("Remove", role: .destructive) { try? bag.remove(item.id) }
         } message: {
@@ -82,11 +84,13 @@ struct CardView: View {
 
     private var form: some View {
         VStack(alignment: .leading, spacing: 6) {
-            Text("The praise").font(.caption).foregroundStyle(.secondary)
+            Text("THE PRAISE").font(Theme.mono(10, .bold)).foregroundStyle(Theme.cyan)
             TextEditor(text: $quote)
-                .font(.system(.body, design: .serif))
+                .font(Theme.mono(13))
                 .frame(minHeight: 110)
-                .border(Color(nsColor: .separatorColor))
+                .scrollContentBackground(.hidden)
+                .background(Color.black.opacity(0.3))
+                .overlay(Rectangle().strokeBorder(Theme.border, lineWidth: 2))
             TextField("From: who said it", text: $from).textFieldStyle(.roundedBorder)
             TextField("About: what it was for", text: $about).textFieldStyle(.roundedBorder)
             TextField("Tags, comma separated", text: $tags).textFieldStyle(.roundedBorder)
@@ -95,6 +99,7 @@ struct CardView: View {
                 Button("Cancel") { editing = false }
                 Button("Save", action: save).keyboardShortcut(.defaultAction)
             }
+            .buttonStyle(PixelButtonStyle())
         }
     }
 

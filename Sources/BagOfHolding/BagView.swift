@@ -20,7 +20,12 @@ struct BagView: View {
 
     var body: some View {
         VStack(alignment: .leading, spacing: 10) {
-            TextField("Search the bag", text: $query).textFieldStyle(.roundedBorder).focused($searching)
+            PixelText(string: "Bag of Holding")
+            TextField("Search the bag", text: $query)
+                .textFieldStyle(.plain).font(Theme.mono(12)).foregroundStyle(Theme.text)
+                .padding(6).background(Theme.panel)
+                .overlay(Rectangle().strokeBorder(Theme.border.opacity(searching ? 1 : 0.5), lineWidth: 2))
+                .focused($searching)
 
             Group {
                 if bag.items.isEmpty { emptyBag }
@@ -28,11 +33,10 @@ struct BagView: View {
                 else { cards }
             }
             .frame(maxWidth: .infinity, minHeight: 220, maxHeight: 640)
-            .overlay(RoundedRectangle(cornerRadius: 10)
-                .stroke(Color.accentColor, lineWidth: dropping ? 2 : 0))
+            .overlay(Rectangle().strokeBorder(Theme.pink, lineWidth: dropping ? 3 : 0))
             .onDrop(of: [.fileURL], isTargeted: $dropping, perform: drop)
 
-            if let problem { Text(problem).font(.caption).foregroundStyle(.red) }
+            if let problem { Text(problem).font(Theme.mono(11)).foregroundStyle(Theme.pink) }
             if pasting { paste }
 
             HStack {
@@ -41,7 +45,7 @@ struct BagView: View {
             }
             .disabled(bag.items.isEmpty)
 
-            Divider()
+            Rectangle().fill(Theme.border.opacity(0.4)).frame(height: 2)
             HStack {
                 Button("Drop files…") { DropTile.shared.show(bag: bag) }
                     .help("A small window you can drag files onto")
@@ -61,8 +65,13 @@ struct BagView: View {
                     .labelsHidden().disabled(!reminderOn)
             }
         }
+        .buttonStyle(PixelButtonStyle())
+        .toggleStyle(.switch).tint(Theme.pink)
+        .font(Theme.mono(12)).foregroundStyle(Theme.text)
         .padding(14)
         .frame(width: 520)
+        .background(Theme.night)
+        .environment(\.colorScheme, .dark)
         .onAppear {
             switch opening {
             case .added(let id): shown = [id]
@@ -84,12 +93,13 @@ struct BagView: View {
 
     private var emptyBag: some View {
         VStack(spacing: 8) {
-            Image(systemName: "bag").font(.largeTitle).foregroundStyle(.secondary)
-            Text("The bag is empty.").font(.headline)
+            Image(nsImage: PouchIcon.image).resizable().frame(width: 48, height: 48).foregroundStyle(Theme.pink)
+            Text("THE BAG IS EMPTY.").font(Theme.mono(14, .bold)).foregroundStyle(Theme.cyan)
             Text("Drop in a screenshot of kind words or a note about something you shipped. It'll keep for a rainy day.")
-                .multilineTextAlignment(.center).foregroundStyle(.secondary)
+                .multilineTextAlignment(.center).foregroundStyle(Theme.dim)
         }
-        .padding()
+        .frame(maxWidth: .infinity)
+        .dialogueBox()
     }
 
     private var cards: some View {
@@ -102,7 +112,7 @@ struct BagView: View {
                 }
                 if bag.items.count == 1 {
                     Text("That's the only thing in the bag so far.")
-                        .font(.caption).foregroundStyle(.secondary)
+                        .font(Theme.mono(10)).foregroundStyle(Theme.dim)
                 }
             }
         }
@@ -116,23 +126,27 @@ struct BagView: View {
                 query = ""
             } label: {
                 VStack(alignment: .leading) {
-                    Text(item.originalName)
+                    Text(item.originalName).foregroundStyle(Theme.text)
                     Text(item.added, format: .dateTime.day().month().year())
-                        .font(.caption).foregroundStyle(.secondary)
+                        .font(Theme.mono(10)).foregroundStyle(Theme.dim)
                 }
             }
             .buttonStyle(.plain)
+            .listRowBackground(Theme.panel)
         }
+        .scrollContentBackground(.hidden)
+        .background(Theme.panel)
         .overlay {
             if found.isEmpty {
-                Text("Nothing in the bag matches “\(query)”.").foregroundStyle(.secondary)
+                Text("Nothing in the bag matches “\(query)”.").foregroundStyle(Theme.dim)
             }
         }
     }
 
     private var paste: some View {
         VStack(alignment: .trailing) {
-            TextEditor(text: $draft).frame(height: 90).border(Color(nsColor: .separatorColor))
+            TextEditor(text: $draft).frame(height: 90).scrollContentBackground(.hidden)
+                .background(Theme.panel).overlay(Rectangle().strokeBorder(Theme.border, lineWidth: 2))
             HStack {
                 Button("Cancel") { pasting = false; draft = "" }
                 Button("Put it in the bag") {

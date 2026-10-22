@@ -86,7 +86,8 @@ struct DropTileView: View {
         HStack(spacing: 4) {
             icon(nsImage: PouchIcon.image, "Open the bag (or drop files here)") { reveal(.browse) }
             if let note {
-                Text(note).font(.callout).lineLimit(1).padding(.horizontal, 4)
+                Text(note).font(Theme.mono(11, .bold)).foregroundStyle(Theme.cyan).textCase(.uppercase)
+                    .lineLimit(1).padding(.horizontal, 4)
             } else {
                 icon("arrow.clockwise", "Another") { reveal(.another) }
                 icon("cloud.rain", "I'm having a bad day") { reveal(.badDay) }
@@ -97,10 +98,10 @@ struct DropTileView: View {
         }
         .padding(.horizontal, 6)
         .frame(width: 232, height: 34)
-        .background(.bar, in: RoundedRectangle(cornerRadius: 9))
-        .overlay(RoundedRectangle(cornerRadius: 9)
-            .stroke(targeted ? Color.accentColor : Color.primary.opacity(0.12), lineWidth: targeted ? 2 : 0.5))
-        .contentShape(RoundedRectangle(cornerRadius: 9))
+        .background(Theme.panel)
+        .overlay(Rectangle().strokeBorder(targeted ? Theme.pink : Theme.border, lineWidth: targeted ? 3 : 2))
+        .contentShape(Rectangle())
+        .foregroundStyle(Theme.text)
         .onHover { hovering = $0 }
         .onDrop(of: [.fileURL], isTargeted: $targeted) { providers in
             bag.take(providers) { result in
@@ -159,9 +160,9 @@ private struct BarButtonStyle: ButtonStyle {
 
     func makeBody(configuration: Configuration) -> some View {
         configuration.label
-            .foregroundStyle(.primary)
-            .background(RoundedRectangle(cornerRadius: 5)
-                .fill(Color.primary.opacity(configuration.isPressed ? 0.2 : hover ? 0.1 : 0)))
+            .foregroundStyle(configuration.isPressed || hover ? Theme.pink : Theme.text)
+            .background(Rectangle()
+                .fill(Theme.border.opacity(configuration.isPressed ? 0.35 : hover ? 0.2 : 0)))
             .onHover { hover = $0 }
     }
 }
