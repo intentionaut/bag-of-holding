@@ -15,6 +15,7 @@ struct BagView: View {
     @State private var draft = ""
     @State private var problem: String?
     @State private var dropping = false
+    @AppStorage(Theme.key) private var theme = Theme.palettes[0].name
     @AppStorage("reminderOn") private var reminderOn = false
     @AppStorage("reminderMinutes") private var reminderMinutes = 9 * 60
 
@@ -59,6 +60,13 @@ struct BagView: View {
                 Button("Quit") { NSApp.terminate(nil) }
             }
             HStack {
+                Picker("Theme", selection: $theme) {
+                    ForEach(Theme.palettes, id: \.name) { Text($0.name).tag($0.name) }
+                }
+                .fixedSize()
+                Spacer()
+            }
+            HStack {
                 Toggle("Daily reminder", isOn: $reminderOn)
                 Spacer()
                 DatePicker("Time", selection: reminderTime, displayedComponents: .hourAndMinute)
@@ -71,7 +79,8 @@ struct BagView: View {
         .padding(14)
         .frame(width: 520)
         .background(Theme.night)
-        .environment(\.colorScheme, .dark)
+        .environment(\.colorScheme, Theme.scheme)
+        .id(theme)   // redraw everything in the new colours
         .onAppear {
             switch opening {
             case .added(let id): shown = [id]

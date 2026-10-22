@@ -29,7 +29,7 @@ struct CardView: View {
             Image(nsImage: image)
                 .resizable().scaledToFit()
                 .frame(maxWidth: .infinity, maxHeight: 480)
-                .overlay(Rectangle().strokeBorder(Color.black, lineWidth: 2))
+                .overlay(Rectangle().strokeBorder(Theme.edge, lineWidth: 2))
         } else {
             Text(words.isEmpty ? placeholder : "“\(words.trimmingCharacters(in: CharacterSet(charactersIn: "\"“”")))”")
                 .font(Theme.mono(15, .medium))
@@ -89,7 +89,7 @@ struct CardView: View {
                 .font(Theme.mono(13))
                 .frame(minHeight: 110)
                 .scrollContentBackground(.hidden)
-                .background(Color.black.opacity(0.3))
+                .background(Theme.night)
                 .overlay(Rectangle().strokeBorder(Theme.border, lineWidth: 2))
             TextField("From: who said it", text: $from).textFieldStyle(.roundedBorder)
             TextField("About: what it was for", text: $about).textFieldStyle(.roundedBorder)
