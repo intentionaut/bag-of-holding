@@ -11,8 +11,6 @@ struct BagView: View {
     @State private var picker = Picker<UUID>()
     @State private var shown: [UUID] = []
     @State private var query = ""
-    @State private var pasting = false
-    @State private var draft = ""
     @State private var problem: String?
     @State private var dropping = false
     @AppStorage("tab") private var tab = "bag"
@@ -54,11 +52,13 @@ struct BagView: View {
             case .added(let id): shown = [id]; tab = "bag"
             case .badDay: reach(3); tab = "bag"
             case .search: tab = "bag"; searching = true
+            case .newEntry: tab = "add"
             case .another: reach(1); tab = "bag"
             case .browse: if shown.isEmpty { reach(1) }
             }
             reschedule()
         }
+        .background(Button("New entry") { tab = "add" }.keyboardShortcut("n").opacity(0).allowsHitTesting(false))
         .onChange(of: reminderOn) { reschedule() }
         .onChange(of: reminderMinutes) { reschedule() }
     }
@@ -74,7 +74,7 @@ struct BagView: View {
 
     private var tabs: some View {
         HStack(spacing: 2) {
-            ForEach([("bag", "Bag"), ("add", "Add"), ("settings", "Settings")], id: \.0) { key, label in
+            ForEach([("bag", "Bag"), ("add", "New entry"), ("settings", "Settings")], id: \.0) { key, label in
                 Button(label) { tab = key }
                     .buttonStyle(TabStyle(selected: tab == key))
             }
@@ -106,21 +106,20 @@ struct BagView: View {
 
     private var adding: some View {
         VStack(alignment: .leading, spacing: 10) {
+            EntryForm(bag: bag) { shown = [$0.id]; tab = "bag"; problem = nil }
             VStack(spacing: 6) {
                 Text("DROP FILES HERE").font(Theme.mono(13, .bold)).foregroundStyle(Theme.cyan)
                 Text("Screenshots, text, markdown, transcripts and PDFs. Each is copied in; your original stays put.")
                     .multilineTextAlignment(.center).foregroundStyle(Theme.dim)
             }
-            .frame(maxWidth: .infinity, minHeight: 110)
+            .frame(maxWidth: .infinity, minHeight: 70)
             .dialogueBox(lit: dropping)
             .onDrop(of: [.fileURL], isTargeted: $dropping, perform: drop)
             HStack {
                 Button("Choose files…", action: choose)
                 Button("Drop bar") { DropTile.shared.show(bag: bag) }
                     .help("A small floating bar you can drag files onto from Finder")
-                Button("Paste text") { pasting.toggle() }
             }
-            if pasting { paste }
         }
     }
 
@@ -203,24 +202,6 @@ struct BagView: View {
         .overlay {
             if found.isEmpty {
                 Text("Nothing in the bag matches “\(query)”.").foregroundStyle(Theme.dim)
-            }
-        }
-    }
-
-    private var paste: some View {
-        VStack(alignment: .trailing) {
-            TextEditor(text: $draft).frame(height: 90).scrollContentBackground(.hidden)
-                .background(Theme.panel).overlay(Rectangle().strokeBorder(Theme.border, lineWidth: 2))
-            HStack {
-                Button("Cancel") { pasting = false; draft = "" }
-                Button("Put it in the bag") {
-                    do {
-                        shown = [try bag.addText(draft).id]
-                        tab = "bag"
-                        draft = ""; pasting = false; problem = nil
-                    } catch { problem = error.localizedDescription }
-                }
-                .disabled(draft.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty)
             }
         }
     }

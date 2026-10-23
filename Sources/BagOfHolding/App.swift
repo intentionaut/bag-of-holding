@@ -22,11 +22,31 @@ final class MenuBar: NSObject, NSApplicationDelegate {
         item.button?.image = PouchIcon.image
         item.button?.toolTip = "Bag of Holding"
         item.button?.target = self
-        item.button?.action = #selector(toggle)
+        item.button?.action = #selector(clicked)
+        item.button?.sendAction(on: [.leftMouseUp, .rightMouseUp])
         self.item = item
     }
 
-    @objc private func toggle() { BagWindow.shared.toggle() }
+    /// Click opens or closes the bag. Right-click (or Control-click) offers a new entry straight away.
+    @objc private func clicked() {
+        let event = NSApp.currentEvent
+        guard event?.type == .rightMouseUp || event?.modifierFlags.contains(.control) == true else {
+            return BagWindow.shared.toggle()
+        }
+        let menu = NSMenu()
+        for (title, key, action) in [("New entry", "n", #selector(newEntry)), ("Open the bag", "", #selector(open)),
+                                     ("Quit", "q", #selector(quit))] {
+            let entry = menu.addItem(withTitle: title, action: action, keyEquivalent: key)
+            entry.target = self
+        }
+        item?.menu = menu
+        item?.button?.performClick(nil)
+        item?.menu = nil   // so the next plain click toggles the window again
+    }
+
+    @objc private func newEntry() { BagWindow.shared.show(.newEntry) }
+    @objc private func open() { BagWindow.shared.show() }
+    @objc private func quit() { NSApp.terminate(nil) }
 }
 
 /// What the window shows: the bag, or the first-run folder choice.

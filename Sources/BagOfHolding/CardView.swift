@@ -92,6 +92,7 @@ struct CardView: View {
                 .background(Theme.night)
                 .overlay(Rectangle().strokeBorder(Theme.border, lineWidth: 2))
             TextField("From: who said it", text: $from).textFieldStyle(.roundedBorder)
+            Suggestions(options: Names.suggestions(from: bag.knownFrom, matching: from)) { from = $0 }
             TextField("About: what it was for", text: $about).textFieldStyle(.roundedBorder)
             TextField("Tags, comma separated", text: $tags).textFieldStyle(.roundedBorder)
             HStack {
@@ -113,11 +114,13 @@ struct CardView: View {
 
     private func save() {
         let trim = { (s: String) in s.trimmingCharacters(in: .whitespacesAndNewlines) }
+        let from = Names.canonical(from, among: bag.knownFrom)
+        let tags = bag.tidyTags(tags.split(separator: ",").map(String.init))
         bag.update(item.id) {
             $0.quote = trim(quote).isEmpty ? nil : trim(quote)
-            $0.from = trim(from).isEmpty ? nil : trim(from)
-            $0.about = trim(about).isEmpty ? nil : trim(about)
-            $0.tags = tags.split(separator: ",").map { trim(String($0)) }.filter { !$0.isEmpty }
+            $0.from = from
+            $0.about = Names.tidy(about)
+            $0.tags = tags
         }
         editing = false
     }
