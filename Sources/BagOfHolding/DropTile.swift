@@ -71,7 +71,7 @@ private final class TilePanel: NSPanel {
 }
 
 /// What the bag should do when the bar opens it.
-enum Opening: Equatable { case browse, another, badDay, search, added(UUID) }
+enum Opening: Equatable { case browse, another, badDay, search, newEntry, added(UUID) }
 
 struct DropTileView: View {
     @ObservedObject var bag: Bag
@@ -93,6 +93,7 @@ struct DropTileView: View {
                 icon("arrow.clockwise", "Another") { reveal(.another) }
                 icon("cloud.rain", "I'm having a bad day") { reveal(.badDay) }
                 icon("magnifyingglass", "Search the bag") { reveal(.search) }
+                icon("square.and.pencil", "New entry (⌘N)") { reveal(.newEntry) }
             }
             Spacer(minLength: 0)
             icon("xmark", "Close (Esc)") { DropTile.shared.hide() }
