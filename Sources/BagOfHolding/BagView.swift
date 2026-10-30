@@ -10,9 +10,9 @@ struct BagView: View {
     @FocusState private var searching: Bool
     @State private var picker = Picker<UUID>()
     @State private var shown: [UUID] = []
+    @State private var scene: Int?
+    @State private var sceneTurn = -1
     @State private var query = ""
-    @State private var pasting = false
-    @State private var draft = ""
     @State private var problem: String?
     @State private var dropping = false
     @AppStorage("tab") private var tab = "bag"
@@ -27,7 +27,7 @@ struct BagView: View {
             HStack(alignment: .bottom) {
                 HStack(alignment: .center, spacing: 8) {
                     PixelText(string: "Bag of Holding", pixel: 2)
-                    Pouch()
+                    Button { nextScene() } label: { Pouch() }.buttonStyle(.plain).help("Something cute")
                 }
                 Spacer()
                 tabs
@@ -52,13 +52,16 @@ struct BagView: View {
             bag.refresh()   // pick up anything the `bag` command added while the window was shut
             switch opening {
             case .added(let id): shown = [id]; tab = "bag"
-            case .badDay: reach(3); tab = "bag"
             case .search: tab = "bag"; searching = true
-            case .another: reach(1); tab = "bag"
+            case .newEntry: tab = "add"
+            case .another: another(); tab = "bag"
             case .browse: if shown.isEmpty { reach(1) }
             }
             reschedule()
         }
+        .background(Button("New entry") { tab = "add" }.keyboardShortcut("n").opacity(0).allowsHitTesting(false))
+        .onChange(of: shown) { scene = nil }
+        .onChange(of: query) { scene = nil }
         .onChange(of: reminderOn) { reschedule() }
         .onChange(of: reminderMinutes) { reschedule() }
     }
@@ -74,8 +77,8 @@ struct BagView: View {
 
     private var tabs: some View {
         HStack(spacing: 2) {
-            ForEach([("bag", "Bag"), ("add", "Add"), ("settings", "Settings")], id: \.0) { key, label in
-                Button(label) { tab = key }
+            ForEach([("bag", "Bag"), ("add", "New entry"), ("settings", "Settings")], id: \.0) { key, label in
+                Button(label) { tab = key; if key == "bag" { another() } }
                     .buttonStyle(TabStyle(selected: tab == key))
             }
         }
@@ -89,38 +92,34 @@ struct BagView: View {
                 .overlay(Rectangle().strokeBorder(Theme.border.opacity(searching ? 1 : 0.5), lineWidth: 2))
                 .focused($searching)
             Group {
-                if bag.items.isEmpty { emptyBag }
+                if let scene { CoverScene(index: scene).contentShape(Rectangle()).onTapGesture { reach(1) } }
+                else if bag.items.isEmpty { emptyBag }
                 else if !query.isEmpty { results }
                 else { cards }
             }
             .frame(maxWidth: .infinity, minHeight: 220, maxHeight: 560)
             .overlay(Rectangle().strokeBorder(Theme.pink, lineWidth: dropping ? 3 : 0))
             .onDrop(of: [.fileURL], isTargeted: $dropping, perform: drop)
-            HStack {
-                Button("Another") { reach(1) }.keyboardShortcut(.return)
-                Button("I'm having a bad day") { reach(3) }
-            }
-            .disabled(bag.items.isEmpty)
+            Button("Reach into the bag", action: another).keyboardShortcut(.return).frame(maxWidth: .infinity)
         }
     }
 
     private var adding: some View {
         VStack(alignment: .leading, spacing: 10) {
+            EntryForm(bag: bag) { shown = [$0.id]; tab = "bag"; problem = nil }
             VStack(spacing: 6) {
                 Text("DROP FILES HERE").font(Theme.mono(13, .bold)).foregroundStyle(Theme.cyan)
                 Text("Screenshots, text, markdown, transcripts and PDFs. Each is copied in; your original stays put.")
                     .multilineTextAlignment(.center).foregroundStyle(Theme.dim)
             }
-            .frame(maxWidth: .infinity, minHeight: 110)
+            .frame(maxWidth: .infinity, minHeight: 70)
             .dialogueBox(lit: dropping)
             .onDrop(of: [.fileURL], isTargeted: $dropping, perform: drop)
             HStack {
                 Button("Choose files…", action: choose)
                 Button("Drop bar") { DropTile.shared.show(bag: bag) }
                     .help("A small floating bar you can drag files onto from Finder")
-                Button("Paste text") { pasting.toggle() }
             }
-            if pasting { paste }
         }
     }
 
@@ -157,9 +156,9 @@ struct BagView: View {
 
     private var emptyBag: some View {
         VStack(spacing: 8) {
-            Image(nsImage: PouchIcon.image).resizable().frame(width: 48, height: 48).foregroundStyle(Theme.pink)
-            Text("THE BAG IS EMPTY.").font(Theme.mono(14, .bold)).foregroundStyle(Theme.cyan)
-            Text("Drop in a screenshot of kind words or a note about something you shipped. It'll keep for a rainy day.")
+            NappingBag()
+            Text("THE BAG IS NAPPING.").font(Theme.mono(14, .bold)).foregroundStyle(Theme.cyan)
+            Text("It'll wake for your first kind word. Drop one in, or write one down.")
                 .multilineTextAlignment(.center).foregroundStyle(Theme.dim)
         }
         .frame(maxWidth: .infinity)
@@ -207,28 +206,25 @@ struct BagView: View {
         }
     }
 
-    private var paste: some View {
-        VStack(alignment: .trailing) {
-            TextEditor(text: $draft).frame(height: 90).scrollContentBackground(.hidden)
-                .background(Theme.panel).overlay(Rectangle().strokeBorder(Theme.border, lineWidth: 2))
-            HStack {
-                Button("Cancel") { pasting = false; draft = "" }
-                Button("Put it in the bag") {
-                    do {
-                        shown = [try bag.addText(draft).id]
-                        tab = "bag"
-                        draft = ""; pasting = false; problem = nil
-                    } catch { problem = error.localizedDescription }
-                }
-                .disabled(draft.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty)
-            }
-        }
+    // MARK: Actions
+
+    /// Praise, with a scene about one press in six. An empty bag steps from the nap through the scenes.
+    private func another() {
+        if bag.items.isEmpty { scene = (scene ?? -1) + 1 < Cover.scenes.count ? (scene ?? -1) + 1 : nil }
+        else if scene == nil, Int.random(in: 0..<6) == 0 { nextScene() }
+        else { reach(1) }
     }
 
-    // MARK: Actions
+    private func nextScene() {
+        tab = "bag"
+        query = ""
+        sceneTurn += 1
+        scene = sceneTurn % Cover.scenes.count
+    }
 
     private func reach(_ count: Int) {
         query = ""
+        scene = nil
         var rng = SystemRandomNumberGenerator()
         var picked: [UUID] = []
         for _ in 0..<min(count, bag.items.count) {

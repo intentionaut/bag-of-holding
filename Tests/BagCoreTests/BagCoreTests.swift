@@ -187,3 +187,69 @@ final class ReadingTests: XCTestCase {
         XCTAssertEqual(Reading.clean(""), "")
     }
 }
+
+final class EntryTests: XCTestCase {
+    var dir: URL!
+    let day = DateComponents(calendar: .current, year: 2026, month: 10, day: 21).date!
+
+    override func setUpWithError() throws {
+        dir = FileManager.default.temporaryDirectory.appendingPathComponent(UUID().uuidString)
+        try FileManager.default.createDirectory(at: dir, withIntermediateDirectories: true)
+    }
+    override func tearDownWithError() throws { try? FileManager.default.removeItem(at: dir) }
+
+    func testWordsOnlyEntry() throws {
+        let bag = Bag(folder: dir.appendingPathComponent("Bag"))
+        let item = try bag.addText("Great work", on: day)
+        XCTAssertNil(item.from); XCTAssertNil(item.about); XCTAssertEqual(item.tags, [])
+        XCTAssertEqual(try String(contentsOf: bag.url(for: item)), "Great work")
+    }
+
+    func testEntryWithDetailsIsSearchableAndSurvivesReopening() throws {
+        let folder = dir.appendingPathComponent("Bag")
+        try Bag(folder: folder).addText("Great work", from: "  Sam   Lee ", about: " Checkout launch ",
+                                        tags: ["praise", " launch "], on: day)
+        let item = Bag(folder: folder).items[0]
+        XCTAssertEqual(item.from, "Sam Lee"); XCTAssertEqual(item.about, "Checkout launch")
+        XCTAssertEqual(item.tags, ["praise", "launch"])
+        for q in ["great", "sam", "checkout", "launch"] { XCTAssertTrue(item.matches(q), q) }
+    }
+
+    func testNamesAndTagsReuseExistingSpelling() throws {
+        let bag = Bag(folder: dir.appendingPathComponent("Bag"))
+        try bag.addText("a", from: "Sam Lee", tags: ["Praise"], on: day)
+        let second = try bag.addText("b", from: "sam  lee", tags: ["praise", "PRAISE", "new"], on: day)
+        XCTAssertEqual(second.from, "Sam Lee")
+        XCTAssertEqual(second.tags, ["Praise", "new"])
+        XCTAssertEqual(Names.distinct(bag.knownFrom), ["Sam Lee"])
+    }
+
+    func testSuggestionsAreDeduplicatedRankedAndFiltered() {
+        let from = ["Sam Lee", "alex", "sam lee", "Alex ", "Alex", "Priya"]
+        XCTAssertEqual(Names.suggestions(from: from, matching: ""), ["Alex", "Sam Lee", "Priya"])
+        XCTAssertEqual(Names.suggestions(from: from, matching: "LEE"), ["Sam Lee"])
+        XCTAssertEqual(Names.suggestions(from: from, matching: "alex"), [])   // already complete
+        XCTAssertEqual(Names.suggestions(from: from, matching: "", excluding: ["alex"]), ["Sam Lee", "Priya"])
+    }
+
+    func testBackdatedEntryFilesAndShowsOnChosenDay() throws {
+        let bag = Bag(folder: dir.appendingPathComponent("Bag"))
+        let when = Names.entryDate(day, now: Date())
+        let item = try bag.addText("old", on: when)
+        XCTAssertEqual(item.file, "2026/10 October/2026-10-21 pasted.txt")
+        XCTAssertTrue(Calendar.current.isDate(item.added, inSameDayAs: day))
+        let now = Date()
+        XCTAssertEqual(Names.entryDate(now, now: now), now)   // today keeps the real time
+        XCTAssertGreaterThan(Names.entryDate(now, now: now), when)   // so it sorts after older days
+    }
+
+    func testEditKeepsEntryAndDate() throws {
+        let folder = dir.appendingPathComponent("Bag")
+        let bag = Bag(folder: folder)
+        let item = try bag.addText("words", from: "Sam", on: day)
+        bag.update(item.id) { $0.about = "Why it mattered"; $0.quote = "words, tidied" }
+        let reopened = Bag(folder: folder).items[0]
+        XCTAssertEqual(reopened.added, item.added)
+        XCTAssertEqual(reopened.about, "Why it mattered"); XCTAssertEqual(reopened.from, "Sam")
+    }
+}

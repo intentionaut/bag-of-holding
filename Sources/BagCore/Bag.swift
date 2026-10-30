@@ -75,16 +75,33 @@ public final class Bag: ObservableObject {
         return item
     }
 
+    /// Typed or pasted words, with who said it, what it was about and tags if you have them.
+    /// Only the words are needed. Names and tags that match one already in the bag (ignoring
+    /// case and extra spaces) take its spelling, so they don't split into near-duplicates.
     @discardableResult
-    public func addText(_ text: String, on date: Date = Date()) throws -> Item {
+    public func addText(_ text: String, from: String? = nil, about: String? = nil, tags: [String] = [],
+                        on date: Date = Date()) throws -> Item {
         refresh()
         let copy = freeName(for: "pasted.txt", on: date)
         try text.write(to: copy, atomically: true, encoding: .utf8)
-        let item = Item(file: relative(copy), originalName: "Pasted text",
+        var item = Item(file: relative(copy), originalName: "Pasted text",
                         added: date, kind: .text, text: text)
+        item.from = from.flatMap { Names.canonical($0, among: knownFrom) }
+        item.about = Names.tidy(about)
+        item.tags = tidyTags(tags)
         items.append(item)
         save()
         return item
+    }
+
+    /// Everyone who has said something, most often first, one spelling each.
+    public var knownFrom: [String] { items.compactMap(\.from) }
+    public var knownTags: [String] { items.flatMap(\.tags) }
+
+    /// Tags in the spelling the bag already uses, each once.
+    public func tidyTags(_ tags: [String]) -> [String] {
+        var seen = Set<String>()
+        return tags.compactMap { Names.canonical($0, among: knownTags) }.filter { seen.insert(Names.key($0)).inserted }
     }
 
     public func update(_ id: UUID, _ change: (inout Item) -> Void) {

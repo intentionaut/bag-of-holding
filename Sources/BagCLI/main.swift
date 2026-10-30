@@ -146,7 +146,7 @@ func tools() -> [[String: Any]] {
     ]
     return [
         tool("reach_in", "Take something out of the Bag of Holding at random: praise and reminders of the person's good work. Never the same item twice in a row.",
-             ["count": ["type": "integer", "description": "How many different items, default 1 (3 for a bad day)"]], readOnly: true),
+             ["count": ["type": "integer", "description": "How many different items, default 1"]], readOnly: true),
         tool("search", "Find items whose praise, read text, tags, who or what match.", ["query": s("Words to look for")], ["query"], readOnly: true),
         tool("list", "Everything in the bag, oldest first.", readOnly: true),
         tool("show", "One item with all of its text.", ["id": s("Item id")], ["id"], readOnly: true),
