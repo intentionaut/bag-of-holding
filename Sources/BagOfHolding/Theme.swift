@@ -57,7 +57,7 @@ enum Theme {
         (0.299 * Double(c >> 16 & 0xFF) + 0.587 * Double(c >> 8 & 0xFF) + 0.114 * Double(c & 0xFF)) / 255
     }
 
-    private static func mix(_ a: UInt32, _ b: UInt32, _ t: Double) -> UInt32 {
+    static func mix(_ a: UInt32, _ b: UInt32, _ t: Double) -> UInt32 {
         [16, 8, 0].reduce(0) { sum, shift in
             let x = Double(a >> UInt32(shift) & 0xFF), y = Double(b >> UInt32(shift) & 0xFF)
             return sum | UInt32((x + (y - x) * t).rounded()) << UInt32(shift)

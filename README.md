@@ -17,8 +17,8 @@ transcripts (.txt, .vtt, .srt) and PDFs. Each one is copied into a folder you
 choose (say, Bag of Holding on your Desktop), filed as
 `2026/10 October/2026-10-22 name.png`. Click the bag icon and one item comes out at random.
 
-- **Another** shows a different one. Never the same item twice in a row.
-- **I'm having a bad day** shows three at once.
+- **Reach into the bag** shows a different one. Never the same item twice in a row. Now and then it shows a cover scene instead.
+- **The pouch** by the title takes you to the cover scenes, for when you just want to see something cute.
 - **Daily reminder** sends one notification at a time you set. Off by default.
 - **Edit** any card to set the praise in clean words, who it was from, and what
   it was about. The text read from a screenshot is kept alongside your version.
@@ -66,7 +66,7 @@ somewhere on your PATH (say `~/bin`).
 
 ```
 bag random            # one item at random
-bag random 3          # a bad day
+bag random 3          # three at once
 bag search launch
 bag add ~/Desktop/screenshot.png
 bag add --text "Your demo made my day!" --from Sam --tags demo
